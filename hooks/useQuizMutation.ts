@@ -1,4 +1,4 @@
-import { Input } from "@/app/quiz/_components/QuizFormView";
+import { Input } from "@/schemas/formSchema";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 
