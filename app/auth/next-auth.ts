@@ -37,30 +37,30 @@ export const authOptions: NextAuthOptions = {
     })
   ],
 
-  // callbacks: {
-  //   async jwt({ token, user }) {
-  //     try {
-  //       if (user) {
-  //         token.id = user.id;
-  //       }
-  //       return token;
-  //     } catch (error) {
-  //       console.error("JWT Callback Error:", error);
-  //       return token;
-  //     }
-  //   },
-  //   async session({ session, token }) {
-  //     try {
-  //       if (token) {
-  //         session.user.id = token.id;
-  //       }
-  //       return session;
-  //     } catch (error) {
-  //       console.error("Session Callback Error:", error);
-  //       return session;
-  //     }
-  //   }
-  // },
+  callbacks: {
+    async jwt({ token, user }) {
+      try {
+        if (user) {
+          token.id = user.id;
+        }
+        return token;
+      } catch (error) {
+        console.error("JWT Callback Error:", error);
+        return token;
+      }
+    },
+    async session({ session, token }) {
+      try {
+        if (token) {
+          session.user.id = token.id;
+        }
+        return session;
+      } catch (error) {
+        console.error("Session Callback Error:", error);
+        return session;
+      }
+    }
+  },
   events: {
     signIn: async ({ user, account, profile }) => {
       console.log("User signed in:", user, account, profile);
