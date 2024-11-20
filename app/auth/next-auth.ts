@@ -5,19 +5,19 @@ import GoogleProvider from "next-auth/providers/google";
 
 
 
-// declare module "next-auth" {
-//   interface Session {
-//     user: {
-//       id: string
-//     } & DefaultSession["user"]
-//   }
-// }
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+    } & DefaultSession["user"]
+  }
+}
 
-// declare module "next-auth/jwt" {
-//   interface JWT {
-//     id: string
-//   }
-// }
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -36,22 +36,20 @@ export const authOptions: NextAuthOptions = {
   ],
   secret: process.env.NEXTAUTH_SECRET,
 
-
-
-  // callbacks: {
-  //   async jwt({ token, user }) {
-  //     if (user) {
-  //       token.id = user.id
-  //     }
-  //     return token
-  //   },
-  //   async session({ session, token }) {
-  //     if (token) {
-  //       session.user.id = token.id
-  //     }
-  //     return session
-  //   }
-  // },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id
+      }
+      return session
+    }
+  },
   session: {
     strategy: "jwt",
   },
