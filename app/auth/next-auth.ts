@@ -37,82 +37,28 @@ export const authOptions: NextAuthOptions = {
     })
   ],
 
-
   callbacks: {
-    async signIn({ account, profile }) {
-      if (!profile?.email) {
-        throw new Error("Email not found in profile");
-      }
-
-      await prisma.user.upsert({
+    jwt: async ({ token }) => {
+      const db_user = await prisma.user.findFirst({
         where: {
-          email: profile.email,
+          email: token?.email,
         },
-        create: {
-          email: profile.email,
-          name: profile.name,
-        },
-        update: {
-          name: profile.name,
-          image: profile.image,
-
-        },
-      })
-
-      return true;
-    },
-
-    async jwt({ token, user }) {
-      try {
-        if (user) {
-          token.id = user.id;
-        }
-        return token;
-      } catch (error) {
-        console.error("JWT Callback Error:", error);
-        return token;
+      });
+      if (db_user) {
+        token.id = db_user.id;
       }
+      return token;
     },
-    async session({ session, token }) {
-      try {
-        if (token) {
-          session.user.id = token.id;
-        }
-        return session;
-      } catch (error) {
-        console.error("Session Callback Error:", error);
-        return session;
+    session: ({ session, token }) => {
+      if (token) {
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.image = token.picture;
       }
-    }
+      return session;
+    },
   },
-
-
-  // callbacks: {
-  // async jwt({ token, user }) {
-  //   try {
-  //     if (user) {
-  //       token.id = user.id;
-  //     }
-  //     return token;
-  //   } catch (error) {
-  //     console.error("JWT Callback Error:", error);
-  //     return token;
-  //   }
-  // },
-  // async session({ session, token }) {
-  //   try {
-  //     if (token) {
-  //       session.user.id = token.id;
-  //     }
-  //     return session;
-  //   } catch (error) {
-  //     console.error("Session Callback Error:", error);
-  //     return session;
-  //   }
-  // }
-  // },
-
-
 
   events: {
     signIn: async ({ user, account, profile }) => {
