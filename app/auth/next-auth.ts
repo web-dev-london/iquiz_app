@@ -21,6 +21,7 @@ declare module "next-auth/jwt" {
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -59,16 +60,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-
-  events: {
-    signIn: async ({ user, account, profile }) => {
-      console.log("User signed in:", user, account, profile);
-
-    }
-  },
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET,
-  debug: true,
 }
