@@ -7,14 +7,18 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 
+
+
 export async function POST(req: Request) {
   try {
     // Log start of the request
     console.log("Starting POST request...");
 
+    // Retrieve the user session
     const session = await getUserSession();
     console.log('Session retrieved:', session);
 
+    // If the session or user is not found, return an error
     if (!session?.user) {
       console.log("User not logged in");
       return NextResponse.json(
@@ -23,7 +27,36 @@ export async function POST(req: Request) {
       );
     }
 
-    // Parse the request body and validate against schema
+    // Log session user data to inspect what is available
+    console.log('Session user data:', session.user);
+
+    // Fetch providerAccountId from Account table
+    let providerAccountId: string | undefined;
+
+    // Try to find the providerAccountId from the Account model
+    try {
+      const account = await prisma.account.findUnique({
+        where: {
+          userId: session.user.id,
+        },
+      });
+
+      if (account) {
+        providerAccountId = account.providerAccountId;
+        console.log('Provider account found:', providerAccountId);
+      } else {
+        console.log('No account found for user:', session.user.id);
+        return NextResponse.json(
+          { error: "Account not found for user." },
+          { status: 404 }
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching account:', error);
+      return NextResponse.json({ error: 'Failed to fetch account' }, { status: 500 });
+    }
+
+    // Continue with the game creation process
     const body = await req.json();
     console.log("Request body received:", body);
 
@@ -53,7 +86,6 @@ export async function POST(req: Request) {
     const apiUrl = process.env.API_URL as string;
     console.log("Fetching questions from:", apiUrl);
 
-
     // Process MCQ type questions
     if (type === "mcq") {
       const questions = await getMCQQuestions(topic, amount);
@@ -63,7 +95,8 @@ export async function POST(req: Request) {
           question.option2,
           question.option3,
           question.answer,
-        ].filter((option) => option !== null)
+        ]
+          .filter((option) => option !== null)
           .sort(() => Math.random() - 0.5);
 
         return {
@@ -104,6 +137,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Error caught in POST request:", error);
 
+    // Handle validation errors
     if (error instanceof z.ZodError) {
       console.log("Validation error:", error.issues);
       return NextResponse.json(
@@ -119,6 +153,136 @@ export async function POST(req: Request) {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export async function POST(req: Request) {
+//   try {
+//     // Log start of the request
+//     console.log("Starting POST request...");
+
+//     const session = await getUserSession();
+//     console.log('Session retrieved:', session);
+
+//     if (!session?.user) {
+//       console.log("User not logged in");
+//       return NextResponse.json(
+//         { error: "You must be logged in to view the game." },
+//         { status: 401 }
+//       );
+//     }
+
+//     // Parse the request body and validate against schema
+//     const body = await req.json();
+//     console.log("Request body received:", body);
+
+//     const { topic, type, amount } = formSchema.parse(body);
+//     console.log("Parsed body:", { topic, type, amount });
+
+//     // Create the game
+//     const game = await prisma.game.create({
+//       data: {
+//         gameType: type,
+//         timeStarted: new Date(),
+//         userId: session.user.id,
+//         topic,
+//       },
+//     });
+//     console.log("Game created:", game);
+
+//     // Upsert topic count
+//     await prisma.topic_count.upsert({
+//       where: { topic },
+//       create: { topic, count: 1 },
+//       update: { count: { increment: 1 } },
+//     });
+//     console.log("Topic count updated or inserted for:", topic);
+
+//     // Fetch questions from external API
+//     const apiUrl = process.env.API_URL as string;
+//     console.log("Fetching questions from:", apiUrl);
+
+
+//     // Process MCQ type questions
+//     if (type === "mcq") {
+//       const questions = await getMCQQuestions(topic, amount);
+//       const manyData = questions.map((question: MCQQuestion) => {
+//         const options = [
+//           question.option1,
+//           question.option2,
+//           question.option3,
+//           question.answer,
+//         ].filter((option) => option !== null)
+//           .sort(() => Math.random() - 0.5);
+
+//         return {
+//           question: question.question,
+//           answer: question.answer,
+//           options: JSON.stringify(options),
+//           gameId: game.id,
+//           questionType: "mcq",
+//         } as const;
+//       });
+
+//       await prisma.question.createMany({
+//         data: manyData,
+//       });
+//       console.log("MCQ questions saved to Database.");
+//     }
+
+//     // Process Open-ended questions
+//     else if (type === "open_ended") {
+//       const questions = await getOpenEnded(topic, amount);
+//       await prisma.question.createMany({
+//         data: questions.map((question: OpenQuestion) => {
+//           return {
+//             question: question.question,
+//             answer: question.answer,
+//             gameId: game.id,
+//             questionType: "open_ended",
+//           };
+//         }),
+//       });
+//       console.log("Open-ended questions saved to Database.");
+//     }
+
+//     // Return success response with game ID
+//     console.log("POST request completed successfully.");
+//     return NextResponse.json({ gameId: game.id }, { status: 200 });
+
+//   } catch (error) {
+//     console.error("Error caught in POST request:", error);
+
+//     if (error instanceof z.ZodError) {
+//       console.log("Validation error:", error.issues);
+//       return NextResponse.json(
+//         { error: error.issues },
+//         { status: 400 }
+//       );
+//     } else {
+//       console.error("Unexpected error occurred:", error);
+//       return NextResponse.json(
+//         { error: "An unexpected error occurred." },
+//         { status: 500 }
+//       );
+//     }
+//   }
+// }
 
 export async function GET(req: Request) {
   try {
