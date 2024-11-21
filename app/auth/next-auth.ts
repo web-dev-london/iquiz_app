@@ -87,9 +87,6 @@ export const authOptions: NextAuthOptions = {
   },
 
 
-
-
-
   // callbacks: {
   // async jwt({ token, user }) {
   //   try {
@@ -114,6 +111,9 @@ export const authOptions: NextAuthOptions = {
   //   }
   // }
   // },
+
+
+
   events: {
     signIn: async ({ user, account, profile }) => {
       console.log("User signed in:", user, account, profile);
