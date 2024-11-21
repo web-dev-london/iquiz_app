@@ -39,23 +39,38 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    jwt: async ({ token }) => {
-      const db_user = await prisma.user.findFirst({
-        where: {
-          email: token?.email,
-        },
-      });
-      if (db_user) {
-        token.id = db_user.id;
+    jwt: async ({ token, user }) => {
+      try {
+        if (user?.email) { // Ensure email exists and is not null
+          const db_user = await prisma.user.upsert({
+            where: { email: user.email }, // Now this is a valid string
+            update: {},
+            create: {
+              email: user.email,
+              name: user.name || '',
+              image: user.image || '',
+            },
+          });
+          token.id = db_user.id;
+        } else {
+          // Handle the case where email is missing
+          console.error("No email found for user", user);
+        }
+      } catch (error) {
+        console.error("Error in JWT callback:", error);
       }
       return token;
     },
     session: ({ session, token }) => {
-      if (token) {
-        session.user.id = token.id;
-        session.user.name = token.name;
-        session.user.email = token.email;
-        session.user.image = token.picture;
+      try {
+        if (token) {
+          session.user.id = token.id;
+          session.user.name = token.name || session.user.name;
+          session.user.email = token.email || session.user.email;
+          session.user.image = typeof token.image === 'string' ? token.image : session.user.image;
+        }
+      } catch (error) {
+        console.error("Error in Session callback:", error);
       }
       return session;
     },
